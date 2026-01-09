@@ -94,6 +94,65 @@ function generateEventId() {
     return `evt_${timestamp}_${random}`;
 }
 
+/**
+ * AES-256 加密
+ * @param {string} text - 明文
+ * @returns {string} 密文 (IV + : + EncryptedData)
+ */
+function encrypt(text) {
+    // 优先使用专用加密密钥，否则回退到 ADMIN_TOKEN (不推荐但兼容)
+    const secretKey = process.env.DATA_ENCRYPTION_KEY || process.env.ADMIN_TOKEN;
+    if (!secretKey) {
+        throw new Error('未配置 DATA_ENCRYPTION_KEY');
+    }
+
+    // 确保密钥长度为 32 字节 (256位)
+    // 如果密钥过长则截取，过短则补全（这里简单处理：使用只有32位的哈希值）
+    const key = crypto.createHash('sha256').update(String(secretKey)).digest();
+
+    // 生成随机初始化向量 IV
+    const iv = crypto.randomBytes(16);
+
+    const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
+    let encrypted = cipher.update(text, 'utf8', 'hex');
+    encrypted += cipher.final('hex');
+
+    // 返回 IV:EncryptedData
+    return iv.toString('hex') + ':' + encrypted;
+}
+
+/**
+ * AES-256 解密
+ * @param {string} text - 密文 (IV + : + EncryptedData)
+ * @returns {string} 明文
+ */
+function decrypt(text) {
+    const secretKey = process.env.DATA_ENCRYPTION_KEY || process.env.ADMIN_TOKEN;
+    if (!secretKey) {
+        throw new Error('未配置 DATA_ENCRYPTION_KEY');
+    }
+
+    // 如果没有冒号，可能是旧数据或未加密数据，直接返回
+    if (!text || !text.includes(':')) {
+        return text;
+    }
+
+    const key = crypto.createHash('sha256').update(String(secretKey)).digest();
+    const textParts = text.split(':');
+    const iv = Buffer.from(textParts.shift(), 'hex');
+    const encryptedText = textParts.join(':');
+
+    try {
+        const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv);
+        let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
+        decrypted += decipher.final('utf8');
+        return decrypted;
+    } catch (error) {
+        console.error('解密失败:', error.message);
+        return null; // 解密失败返回 null
+    }
+}
+
 module.exports = {
     generateApiKey,
     generateSecretKey,
@@ -102,4 +161,6 @@ module.exports = {
     isValidUUID,
     isValidUserId,
     generateEventId,
+    encrypt,
+    decrypt,
 };

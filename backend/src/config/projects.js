@@ -1,4 +1,5 @@
 const { Pool } = require('pg');
+const { decrypt } = require('../utils/crypto');
 
 // 项目配置管理器的专用连接池（避免循环依赖）
 let configPool = null;
@@ -48,7 +49,7 @@ class ProjectManager {
                         port: row.db_port,
                         database: row.db_name,
                         user: row.db_user,
-                        password: row.db_password_encrypted, // TODO: 解密
+                        password: decrypt(row.db_password_encrypted) || (row.project_id === 'analytics-system' ? process.env.DB_PASSWORD : undefined),
                     },
                     tablePrefix: row.table_prefix || 'analytics_',
                     isActive: row.is_active,
@@ -96,7 +97,7 @@ class ProjectManager {
                         port: row.db_port,
                         database: row.db_name,
                         user: row.db_user,
-                        password: row.db_password_encrypted,
+                        password: decrypt(row.db_password_encrypted) || (row.project_id === 'analytics-system' ? process.env.DB_PASSWORD : undefined),
                     },
                     tablePrefix: row.table_prefix || 'analytics_',
                     isActive: row.is_active,

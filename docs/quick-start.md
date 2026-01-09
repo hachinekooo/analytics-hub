@@ -68,9 +68,15 @@ DB_PASSWORD=your_password
 
 # 管理Token (换成强随机值！)
 ADMIN_TOKEN=your-secure-random-token
+
+# 🔐 数据加密密钥 (必需)
+# 用于加密数据库密码，丢失无法连接数据库
+DATA_ENCRYPTION_KEY=<generated-32-byte-hex-key>
 ```
 
-> 💡 生成强随机Token: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
+> 💡 生成密钥命令:
+> - `ADMIN_TOKEN` & `DATA_ENCRYPTION_KEY`: 
+>   `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
 
 #### 3. 启动服务
 

@@ -4,6 +4,7 @@ const { projectManager } = require('../config/projects');
 const { dbManager } = require('../config/database');
 const { initializeProjectDatabase } = require('../utils/dbInit');
 const { Pool } = require('pg');
+const { encrypt } = require('../utils/crypto');
 
 const router = express.Router();
 
@@ -31,13 +32,16 @@ router.post('/projects', async (req, res, next) => {
     try {
         const { project_id, project_name, db_host, db_port, db_name, db_user, db_password, table_prefix } = req.body;
 
+        // 加密数据库密码
+        const encryptedPassword = db_password ? encrypt(db_password) : null;
+
         const pool = dbManager.defaultPool;
         const result = await pool.query(
             `INSERT INTO analytics_projects 
        (project_id, project_name, db_host, db_port, db_name, db_user, db_password_encrypted, table_prefix)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        RETURNING *`,
-            [project_id, project_name, db_host, db_port || 5432, db_name, db_user, db_password, table_prefix || 'analytics_']
+            [project_id, project_name, db_host, db_port || 5432, db_name, db_user, encryptedPassword, table_prefix || 'analytics_']
         );
 
         // 重新加载项目配置
@@ -59,15 +63,33 @@ router.put('/projects/:id', async (req, res, next) => {
         const { id } = req.params;
         const { project_name, db_host, db_port, db_name, db_user, db_password, table_prefix, is_active } = req.body;
 
+        // 加密数据库密码 (如果提供了新密码)
+        // 注意：前端如果不修改密码，可能传空或原密文，这里简化逻辑：只要传了值就加密，否则不更新（需要前端配合）
+        // 更好的做法是先查询原配置，但这里为保持简单，假设前端只在修改时传值
+        const encryptedPassword = db_password ? encrypt(db_password) : null;
+
         const pool = dbManager.defaultPool;
-        const result = await pool.query(
-            `UPDATE analytics_projects 
-       SET project_name = $1, db_host = $2, db_port = $3, db_name = $4, 
-           db_user = $5, db_password_encrypted = $6, table_prefix = $7, is_active = $8
-       WHERE id = $9
-       RETURNING *`,
-            [project_name, db_host, db_port, db_name, db_user, db_password, table_prefix, is_active, id]
-        );
+
+        // 动态构建SQL，只更新有值的密码
+        let query, params;
+        if (encryptedPassword) {
+            query = `UPDATE analytics_projects 
+                   SET project_name = $1, db_host = $2, db_port = $3, db_name = $4, 
+                       db_user = $5, db_password_encrypted = $6, table_prefix = $7, is_active = $8
+                   WHERE id = $9
+                   RETURNING *`;
+            params = [project_name, db_host, db_port, db_name, db_user, encryptedPassword, table_prefix, is_active, id];
+        } else {
+            // 密码为空时不更新密码字段
+            query = `UPDATE analytics_projects 
+                   SET project_name = $1, db_host = $2, db_port = $3, db_name = $4, 
+                       db_user = $5, table_prefix = $6, is_active = $7
+                   WHERE id = $8
+                   RETURNING *`;
+            params = [project_name, db_host, db_port, db_name, db_user, table_prefix, is_active, id];
+        }
+
+        const result = await pool.query(query, params);
 
         if (result.rows.length > 0) {
             await projectManager.reloadProject(result.rows[0].project_id);
@@ -116,13 +138,19 @@ router.post('/projects/:id/test', async (req, res, next) => {
 
         const project = result.rows[0];
 
+        // 特殊处理：如果是系统项目且数据库密码为空，尝试使用环境变量
+        let dbPassword = project.db_password_encrypted;
+        if (!dbPassword && project.project_id === 'analytics-system') {
+            dbPassword = process.env.DB_PASSWORD;
+        }
+
         // 尝试连接
         const testPool = new Pool({
             host: project.db_host,
             port: project.db_port,
             database: project.db_name,
             user: project.db_user,
-            password: project.db_password_encrypted,
+            password: dbPassword || undefined,
             connectionTimeoutMillis: 3000,
         });
 
@@ -150,6 +178,12 @@ router.post('/projects/:id/init', async (req, res, next) => {
 
         const project = result.rows[0];
 
+        // 特殊处理：如果是系统项目且数据库密码为空，尝试使用环境变量
+        let dbPassword = project.db_password_encrypted;
+        if (!dbPassword && project.project_id === 'analytics-system') {
+            dbPassword = process.env.DB_PASSWORD;
+        }
+
         // 转换为项目配置格式
         const projectConfig = {
             projectId: project.project_id,
@@ -158,7 +192,7 @@ router.post('/projects/:id/init', async (req, res, next) => {
                 port: project.db_port,
                 database: project.db_name,
                 user: project.db_user,
-                password: project.db_password_encrypted,
+                password: dbPassword || undefined,
             },
             tablePrefix: project.table_prefix,
         };
@@ -185,6 +219,12 @@ router.get('/projects/:id/health', async (req, res, next) => {
 
         const project = result.rows[0];
 
+        // 特殊处理：如果是系统项目且数据库密码为空，尝试使用环境变量
+        let dbPassword = project.db_password_encrypted;
+        if (!dbPassword && project.project_id === 'analytics-system') {
+            dbPassword = process.env.DB_PASSWORD;
+        }
+
         // 转换为项目配置格式
         const projectConfig = {
             projectId: project.project_id,
@@ -193,7 +233,7 @@ router.get('/projects/:id/health', async (req, res, next) => {
                 port: project.db_port,
                 database: project.db_name,
                 user: project.db_user,
-                password: project.db_password_encrypted,
+                password: dbPassword || undefined,
             },
             tablePrefix: project.table_prefix,
         };

@@ -261,7 +261,8 @@
                     <el-input v-model="form.db_user" placeholder="root" />
                 </el-form-item>
                 <el-form-item label="数据库密码">
-                    <el-input v-model="form.db_password" type="password" show-password />
+                    <el-input v-model="form.db_password" type="password" show-password
+                        :placeholder="isEdit ? '留空表示不修改' : '请输入密码'" />
                 </el-form-item>
                 <el-form-item label="表前缀">
                     <el-input v-model="form.table_prefix" placeholder="analytics_" />
@@ -344,7 +345,10 @@
                 },
                 editProject(row) {
                     this.isEdit = true;
-                    this.form = { ...row };
+                    // 复制对象，但清空密码字段（避免回显加密字符串）
+                    // 只有当用户输入新密码时，才会在保存时提交 db_password
+                    const { db_password_encrypted, ...rest } = row;
+                    this.form = { ...rest, db_password: '' };
                     this.dialogVisible = true;
                 },
                 async saveProject() {
