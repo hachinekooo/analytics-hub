@@ -34,5 +34,5 @@
 ## ❓ 哪里寻求帮助？
 
 - 查看 [常见问题 (FAQ)](./admin-guide.md#常见问题)
-- 提交 [GitHub Issues](https://github.com/hachinekooo/analytics-hub/issues)
+- 提交 [GitHub Issues](https://github.com/hachinekooo/analyticshub-back/issues)
 - 联系作者: hachineko@yeah.net

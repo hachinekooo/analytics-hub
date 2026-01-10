@@ -15,6 +15,8 @@
 - 🛡️ **安全加固** - 数据库密码 AES-256 加密存储，拒绝拖库风险
 - 🔧 **灵活配置** - 支持表前缀自定义，避免命名冲突
 - ⚡ **高性能** - 连接池管理、索引优化、缓存机制
+- 🛡️ **双重模式** - 开发/生产模式分级，兼顾开发便利与生产安全
+- 🔑 **Token认证** - 标准 Bearer Token 认证支持
 
 ## 📖 文档
 
@@ -36,8 +38,8 @@
 
 ```bash
 # 1. 克隆项目
-git clone https://github.com/hachinekooo/analytics-hub.git
-cd analytics-hub/backend
+git clone https://github.com/hachinekooo/analyticshub-back.git
+cd analyticshub-back/backend
 
 # 2. 安装依赖
 pnpm install
@@ -47,7 +49,12 @@ cp .env.example .env
 # 编辑 .env 设置数据库和Token
 
 # 4. 启动服务（自动初始化数据库）
+# 4. 启动服务（自动初始化数据库）
+# 开发模式：自动宽松安全策略 (CORS, HTTP)，适合本地开发
 pnpm run dev
+
+# 生产模式：严格安全策略
+# pnpm start
 ```
 
 服务启动后：
@@ -91,8 +98,7 @@ backend/
 ├── database/            # 数据库脚本
 │   ├── init.sql        # 系统表初始化
 │   └── project-init.sql# 项目表初始化
-├── public/              # 静态文件
-│   └── admin.html      # 管理后台
+
 ├── src/
 │   ├── config/         # 配置文件
 │   ├── middleware/     # 中间件
@@ -155,8 +161,9 @@ backend/
 - PostgreSQL 15 + pg
 - Helmet + CORS + Rate Limit
 
-**管理后台**:
-- Vue 3 (CDN)
+**前端 (管理后台)**:
+- [Analytics Hub Frontend](https://github.com/hachinekooo/analyticshub-front)
+- Vue 3 + Vite
 - Element Plus
 - Axios
 
@@ -178,7 +185,7 @@ backend/
 
 遇到问题？
 - 查看 [文档](./docs/)
-- 提交 [Issue](https://github.com/hachinekooo/analytics-hub/issues)
+- 提交 [Issue](https://github.com/hachinekooo/analyticshub-back/issues)
 - 查看 [常见问题](./docs/admin-guide.md#常见问题)
 
 ## 📧 联系作者

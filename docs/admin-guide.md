@@ -4,15 +4,58 @@
 
 管理后台是一个基于 Vue 3 的单页面应用，用于管理多个 Analytics 项目配置。
 
+## 🚀 Vue 前端对接指南
+
+如果你正在开发或部署前端项目 (Vue 3 + Vite)，请参考以下关键配置：
+
+### 1. 请求头配置 (Headers)
+
+必须在 Axios 拦截器中添加 `Authorization` 头（Bearer 格式）：
+
+```javascript
+// src/utils/request.js
+service.interceptors.request.use(config => {
+  // 从 localStorage 或 Store 获取 Token
+  const token = localStorage.getItem('admin_token'); 
+  if (token) {
+    config.headers['Authorization'] = `Bearer ${token}` 
+  }
+  return config
+})
+```
+
+> ⚠️ 注意：旧版的 URL 参数 `?token=` 方式已废弃，必须使用 Header。
+
+### 2. BaseURL 配置
+
+根据环境配置 VITE_API_URL：
+
+**开发环境 (.env.development)**:
+```env
+VITE_API_URL = 'http://localhost:3001'
+# 或局域网IP: http://192.168.0.104:3001
+```
+
+**生产环境 (.env.production)**:
+```env
+VITE_API_URL = 'https://api.yourdomain.com'
+```
+
+### 3. CORS (跨域)
+
+- **开发模式** (`pnpm run dev`): 后端自动允许所有跨域 (*)，允许 HTTP 访问。
+- **生产模式**: 后端会启用严格的安全策略。
+
+---
+
 ## 访问方式
 
-URL: `http://your-domain:3001/admin.html?token=YOUR_ADMIN_TOKEN`
+URL: 请先启动 Vue 前端项目
+前端项目地址: [https://github.com/hachinekooo/analyticshub-front](https://github.com/hachinekooo/analyticshub-front)
 
-**重要**: 请在 `.env` 文件中设置 `ADMIN_TOKEN`，不要使用默认值！
-
-```env
-ADMIN_TOKEN=your-secure-random-token-here
-```
+**核心配置**:
+- 必须在 Request Header 中携带 `Authorization: Bearer <token>`
+- 开发环境 API 地址: `http://localhost:3001`
 
 ## 界面预览
 
@@ -266,15 +309,13 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 
 ### 认证方式
 
-所有请求需携带Token：
+必须使用 Header 携带 Token：
 
-```javascript
-// Query参数
-GET /api/admin/projects?token=xxx
-
-// 或 Header
-headers['X-Admin-Token'] = 'xxx'
+```http
+Authorization: Bearer <your_token>
 ```
+
+> ❌ 已废弃: URL参数 `?token=` 和自定义头 `X-Admin-Token` 不再支持。
 
 ### 响应格式
 

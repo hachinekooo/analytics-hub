@@ -97,11 +97,13 @@ pnpm run dev
 ```
 
 #### 4. 访问管理后台
+强烈建议使用新的 Vue 前端项目以获得最佳体验。
 
-打开浏览器访问：
-```
-http://localhost:3001/admin.html?token=your-secure-random-token
-```
+1. 克隆前端项目: `git clone https://github.com/hachinekooo/analyticshub-front.git`
+2. 启动前端: `pnpm dev`
+3. 访问: `http://localhost:5173` (登陆时填写 API Token)
+
+*(备用方案: `http://localhost:3001/admin.html` 可能功能受限)*
 
 #### 5. 添加第一个项目
 

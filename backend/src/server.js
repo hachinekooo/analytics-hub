@@ -19,9 +19,10 @@ const healthRouter = require('./routes/health');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+const isProduction = process.env.NODE_ENV === 'production';
 
 // ============ 中间件配置 ============
-// 安全头部（调整CSP以支持管理后台Vue CDN）
+// 安全头部
 app.use(helmet({
     contentSecurityPolicy: {
         directives: {
@@ -29,16 +30,22 @@ app.use(helmet({
             scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://unpkg.com"],
             styleSrc: ["'self'", "'unsafe-inline'", "https://unpkg.com"],
             imgSrc: ["'self'", "data:", "https:"],
-            connectSrc: ["'self'", "https://unpkg.com"],
+            // 开发环境允许 http 连接 (方便本地调试)，生产环境仅允许 https
+            connectSrc: isProduction
+                ? ["'self'", "https://unpkg.com"]
+                : ["'self'", "https://unpkg.com", "http:", "ws:"],
         },
     },
+    // 仅在生产环境启用 强制HTTPS (HSTS)
+    hsts: isProduction,
 }));
 
 // CORS配置
 app.use(cors({
     origin: process.env.CORS_ORIGIN || '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'X-API-Key', 'X-Device-ID', 'X-User-ID', 'X-Timestamp', 'X-Signature', 'X-App-Version'],
+    // 务必允许 Authorization 头，否则前端无法携带 Token
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key', 'X-Device-ID', 'X-User-ID', 'X-Timestamp', 'X-Signature', 'X-App-Version'],
 }));
 
 // 请求体解析
@@ -98,8 +105,7 @@ app.use('/api/v1/sessions', sessionsRouter);
 const adminRouter = require('./routes/admin');
 app.use('/api/admin', adminRouter);
 
-// 静态文件服务（管理后台界面）
-app.use(express.static('public'));
+
 
 // API路由（预留）
 
@@ -126,12 +132,14 @@ async function startServer() {
         }
 
         // 3. 启动HTTP服务器
-        app.listen(PORT, () => {
+        // 默认监听所有接口 (0.0.0.0) 以支持局域网访问
+        const HOST = process.env.HOST || '0.0.0.0';
+        app.listen(PORT, HOST, () => {
             console.log('');
             console.log('='.repeat(50));
             console.log(`✓ 分析API服务已启动`);
-            console.log(`  端口: ${PORT}`);
-            console.log(`  环境: ${process.env.NODE_ENV || 'development'}`);
+            console.log(`  地址: http://${HOST}:${PORT}`);
+            console.log(`  环境: ${isProduction ? 'production' : 'development'}`);
             console.log(`  健康检查: http://localhost:${PORT}/health`);
             console.log('='.repeat(50));
             console.log('');

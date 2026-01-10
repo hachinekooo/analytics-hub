@@ -179,7 +179,10 @@ router.post('/projects/:id/init', async (req, res, next) => {
         const project = result.rows[0];
 
         // 特殊处理：如果是系统项目且数据库密码为空，尝试使用环境变量
-        let dbPassword = project.db_password_encrypted;
+        // 其他项目：必须解密数据库密码，否则无法连接
+        const { decrypt } = require('../utils/crypto');
+        let dbPassword = project.db_password_encrypted ? decrypt(project.db_password_encrypted) : undefined;
+
         if (!dbPassword && project.project_id === 'analytics-system') {
             dbPassword = process.env.DB_PASSWORD;
         }

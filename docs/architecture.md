@@ -22,7 +22,7 @@ Analytics API Service 是一个通用的数据埋点和分析后端服务，支�
 │                                             │
 │  ┌──────────────┐      ┌─────────────────┐ │
 │  │  Admin API   │      │  Analytics API  │ │
-│  │  (管理后台)   │      │  (数据收集)      │ │
+│  │  (项目管理)   │      │  (数据收集)      │ │
 │  └──────────────┘      └─────────────────┘ │
 │           │                     │           │
 │           v                     v           │
@@ -37,6 +37,13 @@ Analytics API Service 是一个通用的数据埋点和分析后端服务，支�
     │ analytics DB  │     │  memobox DB   │
     │ (系统配置)     │     │  (项目数据)    │
     └───────────────┘     └───────────────┘
+
+                   ^
+                   | HTTP / JSON
+┌──────────────────┴──────────────────────┐
+│       Analytics Hub Frontend            │
+│       (独立 Vue 3 项目)                  │
+└─────────────────────────────────────────┘
 ```
 
 ### 多项目架构
@@ -170,9 +177,9 @@ events.js (路由处理)
 ### 项目添加流程
 
 ```
-管理员
+管理员 (前端项目)
   │
-  ├─ 访问 /admin.html?token=xxx
+  ├─ 访问管理后台 (localhost:5173)
   │
   v
 添加项目
@@ -308,7 +315,8 @@ projects.set('memobox', {...config})
 - pg (node-postgres)
 
 ### 管理后台
-- Vue 3
+- [Analytics Hub Frontend](https://github.com/hachinekooo/analyticshub-front)
+- Vue 3 + Vite
 - Element Plus
 - Axios
 

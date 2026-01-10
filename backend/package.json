@@ -1,5 +1,5 @@
 {
-  "name": "analytics-hub",
+  "name": "analyticshub-back",
   "version": "1.0.0",
   "description": "Multi-project analytics backend service with auto-initialization and admin dashboard",
   "main": "src/server.js",
@@ -20,7 +20,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/hachinekooo/analytics-hub.git"
+    "url": "https://github.com/hachinekooo/analyticshub-back.git"
   },
   "dependencies": {
     "express": "^4.18.2",

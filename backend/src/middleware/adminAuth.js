@@ -3,9 +3,17 @@
  * 简单的固定Token认证，仅供管理员使用
  */
 
-function requireAdminToken(req, res, next) {
+const requireAdminToken = (req, res, next) => {
     // 从查询参数或请求头获取token
-    const token = req.query.token || req.headers['x-admin-token'];
+    // 支持标准 Bearer Token 格式
+    let token = req.query.token || req.headers['x-admin-token'];
+
+    if (!token && req.headers.authorization) {
+        const parts = req.headers.authorization.split(' ');
+        if (parts.length === 2 && parts[0] === 'Bearer') {
+            token = parts[1];
+        }
+    }
 
     // 验证token
     const adminToken = process.env.ADMIN_TOKEN;
@@ -31,6 +39,6 @@ function requireAdminToken(req, res, next) {
             },
         });
     }
-}
+};
 
 module.exports = { requireAdminToken };
